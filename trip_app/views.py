@@ -18,7 +18,7 @@ class TripView(APIView):
             serializer = TripsSerializer(trip, many=True)
             return Response(serializer.data)
     
-    def Itinerary(self, request):
+    def post(self, request):
         serializer = TripsSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -59,7 +59,7 @@ class ItineraryView(APIView):
             serializer = ItinerarySerializer(dailySchedule, many=True)
             return Response(serializer.data)
     
-    def Itinerary(self, request):
+    def post(self, request):
         serializer = ItinerarySerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -86,45 +86,55 @@ class ItineraryView(APIView):
         dailySchedule.delete()
         return Response('The itinerary has been deleted!', status=status.HTTP_204_NO_CONTENT)
 
-# class TripWithItineraryView(APIView):
+class TripWithItineraryView(APIView):
 
-#     def get(self, request, trippk=None, postpk=None):
-#         if postpk:
-#             # categories = Category.objects.get(pk=pk)
-#             posts = Post.objects.filter(id = postpk, cat_id =catpk)
-#             # posts_cat = posts.objects.get(cat_id = catpk)
-#             if posts:
-#                 serializer = PostSerializer(posts, many=True)
-#                 return Response(serializer.data)
-#             return Response(status=status.HTTP_404_NOT_FOUND)
-#         else:
-#             posts = Post.objects.filter(cat_id = catpk)
-#             serializer = PostSerializer(posts, many=True)
-#             return Response(serializer.data)
-    
-#     def post(self, request, catpk, postpk):
-#         serializer = PostSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             print(serializer.data)
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-#     def put(self, request, catpk, postpk):
-#         try:
-#             post = Post.objects.get(id=postpk, cat_id = catpk)
-#         except Post.DoesNotExist:
-#             return Response(status=status.HTTP_404_NOT_FOUND)
-#         serializer = PostSerializer(post, data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get(self, request, trippk=None, intpk=None):
+        if trippk is not None and intpk is not None:
+            #both trippk and intpk are provided, filter by both parameters
+            itinerary = Itinerary.objects.filter(trip_id = trippk, id =intpk)
+        
+        elif trippk is not None:
+            #only trippk is provided, filter by trip_id
+            itinerary = Itinerary.objects.filter(trip_id=trippk)
+        else: 
+            #Neither pk provided, return all
+            itinerary = Itinerary.objects.all()  
+        serializer = ItinerarySerializer(itinerary, many=True)
+        return Response(serializer.data)
 
-#     def delete(self, request, catpk, postpk):
-#         try:
-#             post = Post.objects.get(id=postpk, cat_id=catpk)
-#         except Post.DoesNotExist:
-#             return Response('The post has been deleted!', status=status.HTTP_404_NOT_FOUND)
-#         post.delete()
-#         return Response(status=status.HTTP_204_NO_CONTENT)  
+    def post(self, request, trippk):
+        if trippk is None:
+            return Response({'error': 'trippk is required to create an itinerary.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if the trip with the specified trippk exists
+        try:
+            trip = Trips.objects.get(pk=trippk)
+        except Trips.DoesNotExist:
+            return Response({'error': 'Trip does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ItinerarySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.validated_data['trip_id'] = trip  # Associate the trip with the itinerary
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, trippk, intpk):
+        try:
+            itinerary = Itinerary.objects.get(id=intpk, trip_id = trippk)
+        except Itinerary.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = ItinerarySerializer(itinerary, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, trippk, intpk):
+        try:
+            itinerary = Itinerary.objects.get(id=intpk, trip_id=trippk)
+        except Itinerary.DoesNotExist:
+            return Response('The requested itinerary does not exist.', status=status.HTTP_404_NOT_FOUND)
+        itinerary.delete()
+        return Response('The itinerary has been deleted!',status=status.HTTP_204_NO_CONTENT)  
