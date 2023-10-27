@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-h%_wqyeym0=lzp06mt-1s$k*h&-)!_i=ro!ygyncp+ek^61ql*'
+# SECRET_KEY = 'django-insecure-h%_wqyeym0=lzp06mt-1s$k*h&-)!_i=ro!ygyncp+ek^61ql*'
+SECRET_KEY = os.getenv("SECRET_KEY") 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = True if os.getenv("DEBUG") == "True" else False
 
 ALLOWED_HOSTS = ['*']
 
@@ -77,17 +80,26 @@ WSGI_APPLICATION = 'travel_proj.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": "travel_db",
+#         "USER": "postgres",
+#         "PASSWORD": "postgres",
+#         "HOST": "localhost",  
+#         "PORT": 5454,
+#     }
+# }
 DATABASES = {
-    'default': {
+    "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "travel_db",
-        "USER": "postgres",
-        "PASSWORD": "postgres",
-        "HOST": "localhost",  
-        "PORT": 5454,
+        "NAME": os.getenv("DB_NAME", "travel_db"),
+        "USER": os.getenv("DB_USER", "postgres"),
+        "PASSWORD": os.getenv("DB_PASS", "postgres"),
+        "HOST": "db",  
+        "PORT": 5432, 
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
